@@ -1,83 +1,59 @@
-import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { PrismaClient } from "@prisma/client";
 
-// Caminho para o arquivo data.json
-const filePath = path.resolve('src', 'data', 'data.json');
+const prisma = new PrismaClient();
 
-// Tipo para os dados que esperamos salvar ou ler do JSON
-interface Data {
-  [key: string]: []; // Ajuste conforme o formato dos dados que você está usando
+interface User {
+    name: string;
+    email: string;
+    phone: string;
+    description: string;
 }
 
-// Função para ler os dados do arquivo
-const readFile = (): Data | null => {
+// Handler para requisição PUT
+export async function PUT(req: Request) {
     try {
-        // Lê o conteúdo do arquivo JSON
-        const data = fs.readFileSync(filePath, 'utf8');
-        return JSON.parse(data);
-    } catch (error: unknown) {
-        // Se ocorrer um erro, lança um erro com uma mensagem adequada
-        if (error instanceof Error) {
-            throw new Error(`Erro ao ler o arquivo: ${error.message}`);
-        }
-        throw new Error('Erro desconhecido ao ler o arquivo');
-    }
-};
+        // Extrai os dados do corpo da requisição
+        const body: User = await req.json();
 
-// Função para salvar os dados no arquivo
-const writeFile = (newData: Data): void => {
-    try {
-        // Cria o diretório se não existir
-        if (!fs.existsSync(path.dirname(filePath))) {
-            fs.mkdirSync(path.dirname(filePath), { recursive: true });
-        }
-        // Escreve ou cria o arquivo JSON com os dados recebidos
-        fs.writeFileSync(filePath, JSON.stringify(newData, null, 2));
-    } catch (error: unknown) {
-        // Lança um erro com uma mensagem detalhada se houver falha
-        if (error instanceof Error) {
-            throw new Error(`Erro ao escrever no arquivo: ${error.message}`);
-        }
-        throw new Error('Erro desconhecido ao escrever no arquivo');
-    }
-};
+        // Cria o usuário no banco de dados
+        const user = await prisma.user.create({
+            data: {
+                name: body.name,
+                email: body.email,
+                phone: body.phone,
+                description: body.description,
+                date: new Date(),
+            },
+        });
 
-export async function GET(): Promise<NextResponse> {
-    try {
-        // Tenta ler os dados do arquivo
-        const data = readFile();
-        // Retorna os dados em formato JSON com status 200
-        return NextResponse.json(data, { status: 200 });
-    } catch (error: unknown) {
-        // Se houver erro, captura e retorna a mensagem de erro com status 500
-        if (error instanceof Error) {
-            return NextResponse.json({ message: error.message }, { status: 500 });
-        }
-        return NextResponse.json({ message: 'Erro desconhecido' }, { status: 500 });
+        // Retorna a resposta com o novo usuário criado
+        return new Response(JSON.stringify(user), {
+            status: 201,
+            headers: { "Content-Type": "application/json" },
+        });
+    } catch (error) {
+        console.error(error);
+
+        // Retorna uma resposta de erro
+        return new Response(JSON.stringify({ error: "Erro ao criar usuário" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+        });
     }
 }
 
-export async function PUT(req: NextRequest): Promise<NextResponse> {
+// Handler para requisição GET
+export async function GET() {
     try {
-        // Lê os dados do corpo da requisição
-        const newData: Data = await req.json();
+        // Busca todos os usuários no banco de dados
+        const users = await prisma.user.findMany();
 
-        // Verifica se os dados são válidos
-        if (!newData || Object.keys(newData).length === 0) {
-            return NextResponse.json({ message: 'Dados inválidos' }, { status: 400 });
-        }
+        // Retorna a lista de usuários
+        return new Response(JSON.stringify(users), { status: 200 });
+    } catch (error) {
+        console.error(error);
 
-        // Tenta salvar os dados no arquivo JSON
-        writeFile(newData);
-
-        // Retorna uma mensagem de sucesso
-        return NextResponse.json({ message: 'Arquivo atualizado com sucesso' }, { status: 200 });
-    } catch (error: unknown) {
-        // Se houver erro, captura e retorna a mensagem de erro com status 500
-        if (error instanceof Error) {
-            return NextResponse.json({ message: error.message }, { status: 500 });
-        }
-        return NextResponse.json({ message: 'Erro desconhecido' }, { status: 500 });
+        // Retorna uma resposta de erro
+        return new Response(JSON.stringify({ error: "Erro ao buscar usuários" }), { status: 500 });
     }
 }

@@ -7,7 +7,7 @@ interface Data {
     id: number;
     email: string;
     phone: string;
-    title: string;
+    name: string;
     description: string;
     date: string;
     url: string;
@@ -39,11 +39,11 @@ export default function UserPage() {
 
     if (error) return <p>Erro ao carregar os dados de usuários</p>
 
-    return (
+    if (data && data.length > 0) return (
         <div className="max-w-[2000px] p-5 flex flex-col gap-5 justify-center items-center">
             {data.map((user) => (
                 <div key={user.id} className="w-full p-5 flex gap-16 justify-between items-center bg-black text-white font-semibold rounded-xl">
-                    <h1>{user.title}</h1>
+                    <h1>{user.name}</h1>
                     <p>{user.email}</p>
                     <p>{user.phone}</p>
                     <p>{user.description}</p>
@@ -53,4 +53,6 @@ export default function UserPage() {
             ))}
         </div>
     );
+
+    return <p>Não há usuários cadastrados</p>;
 }
