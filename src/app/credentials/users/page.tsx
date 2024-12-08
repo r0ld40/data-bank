@@ -18,6 +18,11 @@ export default function UserPage() {
     const [ loading, setLoading ] = useState(true);
     const [ error, setError ] = useState(false);
 
+    const handleFormatDate = (date: string) => {
+        const formattedDate = new Date(date).toLocaleDateString('pt-BR');
+        return formattedDate;
+    }
+
     const fetchUsers = async () => {
         try {
             const response = await fetch('/api/user');
@@ -47,12 +52,12 @@ export default function UserPage() {
                     <p>{user.email}</p>
                     <p>{user.phone}</p>
                     <p>{user.description}</p>
-                    <p>{user.date}</p>
+                    <p>{handleFormatDate(user.date)}</p>
                     {user.url && <Link href={user.url} className="border-2 border-white p-2 rounded-xl font-semibold hover:bg-white hover:text-black transition">Acessar GitHub</Link>}
                 </div>
             ))}
         </div>
     );
 
-    return <p>Não há usuários cadastrados</p>;
+    return <p>Não há usuários cadastrados ou o Banco de Dados esta fora do ar.</p>;
 }
